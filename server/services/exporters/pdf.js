@@ -1,3 +1,7 @@
+const fs = require('fs');
+const path = require('path');
+
+const LOGO_PATH = path.join(__dirname, '..', '..', 'assets', 'logo-tile.png');
 const PDFDocument = require('pdfkit');
 const { formatCents } = require('../../utils/money');
 
@@ -27,14 +31,22 @@ function reportToPdf(report) {
 
     // Header
     doc.rect(left, 30, width, 4).fill(ACCENT);
-    doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(18).text(report.company, left, 42);
-    doc.fillColor(MUTED).font('Helvetica').fontSize(8).text('Track Every Ride. Account for Every Delivery.', left, 62);
+    let brandX = left;
+    if (fs.existsSync(LOGO_PATH)) {
+      doc.save();
+      doc.roundedRect(left, 40, 60, 60, 10).clip();
+      doc.image(LOGO_PATH, left, 40, { width: 60, height: 60 });
+      doc.restore();
+      brandX = left + 70;
+    }
+    doc.fillColor(ACCENT).font('Helvetica-Bold').fontSize(18).text(report.company, brandX, 50);
+    doc.fillColor(MUTED).font('Helvetica').fontSize(8).text('Track Every Ride. Account for Every Delivery.', brandX, 72);
     doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(14).text(report.title, left, 42, { width, align: 'right' });
     doc.font('Helvetica').fontSize(9).fillColor(TEXT)
       .text(`Period: ${report.period.from} to ${report.period.to}`, left, 62, { width, align: 'right' })
       .fillColor(MUTED)
       .text(`Generated ${new Date(report.generatedAt).toISOString().replace('T', ' ').slice(0, 16)} UTC by ${report.generatedBy}`, { width, align: 'right' });
-    doc.y = 90;
+    doc.y = 110;
     doc.fillColor(MUTED).fontSize(8.5).text(`Filters: ${report.filters.length ? report.filters.map(([k, v]) => `${k}: ${v}`).join('  •  ') : 'None'}`, left, doc.y, { width });
     doc.moveDown(0.6);
 

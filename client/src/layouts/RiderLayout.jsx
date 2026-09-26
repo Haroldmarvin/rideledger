@@ -26,7 +26,7 @@ export default function RiderLayout() {
   return (
     <div className="rl-rider-shell">
       <header className="rl-rider-top">
-        <Link to="/rider" className="text-decoration-none"><Logo size={30} light /></Link>
+        <Link to="/rider" className="text-decoration-none"><Logo size={46} light /></Link>
         <div className="d-flex align-items-center gap-3">
           <span className={`d-flex align-items-center gap-1 small ${queue.online ? 'text-white-50' : 'text-warning'}`} title={queue.online ? 'Online' : 'Offline'}>
             {queue.online ? <Wifi size={16} /> : <WifiOff size={16} />}

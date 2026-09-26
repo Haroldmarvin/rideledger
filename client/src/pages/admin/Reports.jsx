@@ -127,7 +127,7 @@ export default function Reports() {
         <div className={`card rl-report ${loading ? 'opacity-50' : ''}`}>
           <div className="card-body">
             <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 border-bottom pb-3 mb-3">
-              <div><Logo size={34} /><div className="small text-secondary mt-1">{report.company}</div></div>
+              <div><Logo size={60} /><div className="small text-secondary mt-1">{report.company}</div></div>
               <div className="text-md-end">
                 <h2 className="h5 fw-bold mb-1">{report.title}</h2>
                 <div className="small">Period: <strong>{formatDate(report.period.from)}</strong> – <strong>{formatDate(report.period.to)}</strong></div>

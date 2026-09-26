@@ -37,7 +37,7 @@ export default function Login() {
   return (
     <div className="rl-login min-vh-100 d-flex">
       <div className="rl-login-hero d-none d-lg-flex flex-column justify-content-between p-5">
-        <Logo size={44} light tagline />
+        <Logo size={150} light tagline stacked />
         <div>
           <h2 className="display-6 fw-bold text-white mb-3">Every delivery recorded.<br />Every dollar accounted for.</h2>
           <p className="text-white-50 mb-0" style={{ maxWidth: 440 }}>Riders log deliveries on their phones as they happen. Management sees collections, expenses and cash handovers in one place — with a full audit trail.</p>
@@ -46,7 +46,7 @@ export default function Login() {
       </div>
       <div className="flex-grow-1 d-flex align-items-center justify-content-center p-3">
         <div className="w-100" style={{ maxWidth: 400 }}>
-          <div className="d-lg-none mb-4 d-flex justify-content-center"><Logo size={40} tagline /></div>
+          <div className="d-lg-none mb-4 d-flex justify-content-center"><Logo size={130} tagline stacked /></div>
           <div className="card shadow-sm border-0">
             <div className="card-body p-4">
               <h1 className="h4 fw-bold mb-1">Sign in</h1>

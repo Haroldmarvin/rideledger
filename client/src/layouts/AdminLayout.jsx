@@ -23,7 +23,7 @@ function SideNav({ onNavigate }) {
   const { user, logout } = useAuth();
   return (
     <div className="d-flex flex-column h-100">
-      <div className="px-3 py-3 border-bottom border-white border-opacity-10"><Logo size={32} light /></div>
+      <div className="px-3 py-4 border-bottom border-white border-opacity-10"><Logo size={96} light stacked /></div>
       <nav className="flex-grow-1 py-2 overflow-auto" aria-label="Admin">
         {NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} onClick={onNavigate} className={({ isActive }) => `rl-side-link ${isActive ? 'active' : ''}`}>
@@ -63,7 +63,7 @@ export default function AdminLayout() {
       <div className="rl-admin-main">
         <header className="rl-admin-top d-lg-none">
           <button type="button" className="btn btn-link text-white p-1" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={24} /></button>
-          <Logo size={28} light />
+          <Logo size={44} light />
           <span style={{ width: 32 }} />
         </header>
         <main className="rl-admin-content">
