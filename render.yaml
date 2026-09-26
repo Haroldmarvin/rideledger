@@ -3,6 +3,7 @@ services:
   - type: web
     name: rideledger-api
     runtime: node
+    plan: free
     rootDir: server
     buildCommand: npm ci --omit=dev
     startCommand: npm start
