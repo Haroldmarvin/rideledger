@@ -137,7 +137,7 @@ async function buildReport(type, query = {}, user) {
   const report = {
     type,
     title: REPORT_TYPES[type],
-    company: settings.companyName || 'RideLedger',
+    company: settings.companyName || 'Afri Kapital Kitchen',
     currencySymbol: settings.currencySymbol || '$',
     period: { from: filters.from, to: filters.to },
     generatedAt: new Date().toISOString(),

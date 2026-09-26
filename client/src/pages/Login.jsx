@@ -4,6 +4,7 @@ import { Eye, EyeOff, LogIn } from 'lucide-react';
 import Logo from '../components/Logo';
 import LoadingButton from '../components/LoadingButton';
 import { useAuth } from '../context/AuthContext';
+import { APP_NAME } from '../utils/constants';
 
 export default function Login() {
   const { user, login, notice, setNotice } = useAuth();
@@ -42,7 +43,7 @@ export default function Login() {
           <h2 className="display-6 fw-bold text-white mb-3">Every delivery recorded.<br />Every dollar accounted for.</h2>
           <p className="text-white-50 mb-0" style={{ maxWidth: 440 }}>Riders log deliveries on their phones as they happen. Management sees collections, expenses and cash handovers in one place — with a full audit trail.</p>
         </div>
-        <div className="text-white-50 small">© {new Date().getFullYear()} RideLedger</div>
+        <div className="text-white-50 small">© {new Date().getFullYear()} {APP_NAME}</div>
       </div>
       <div className="flex-grow-1 d-flex align-items-center justify-content-center p-3">
         <div className="w-100" style={{ maxWidth: 400 }}>

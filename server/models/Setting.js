@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 /** Single-document application settings. */
 const settingSchema = new mongoose.Schema({
   _id: { type: String, default: 'app' },
-  companyName: { type: String, trim: true, maxlength: 120, default: 'RideLedger' },
+  companyName: { type: String, trim: true, maxlength: 120, default: 'Afri Kapital Kitchen' },
   currencySymbol: { type: String, trim: true, maxlength: 5, default: '$' },
   allowRiderFeeOverride: { type: Boolean, default: true },
   requireReceiptForExpenses: { type: Boolean, default: false },

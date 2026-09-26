@@ -74,7 +74,7 @@ export default function Reports() {
     if (meta.needsRider && !f.rider) { setError({ message: 'Please choose a rider first.' }); return; }
     setExporting(kind);
     try {
-      await downloadFile(`/reports/export/${kind}`, params(), `RideLedger_${type}.${kind === 'excel' ? 'xlsx' : 'pdf'}`);
+      await downloadFile(`/reports/export/${kind}`, params(), `AfriKapitalKitchen_${type}.${kind === 'excel' ? 'xlsx' : 'pdf'}`);
       toast.success(`${kind === 'excel' ? 'Excel' : 'PDF'} report downloaded.`);
     } catch (e) { toast.error(e.message || 'Export failed.'); } finally { setExporting(null); }
   };

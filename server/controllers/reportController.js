@@ -14,7 +14,7 @@ const viewReport = asyncHandler(async (req, res) => {
 });
 
 function fileName(report, ext) {
-  return `RideLedger_${report.type}_${report.period.from}_to_${report.period.to}.${ext}`;
+  return `AfriKapitalKitchen_${report.type}_${report.period.from}_to_${report.period.to}.${ext}`;
 }
 
 const exportExcel = asyncHandler(async (req, res) => {

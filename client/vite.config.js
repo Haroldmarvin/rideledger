@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'RideLedger — Bike Delivery Accountability',
-        short_name: 'RideLedger',
+        name: 'Afri Kapital Kitchen Ledger',
+        short_name: 'AKK Ledger',
         description: 'Track Every Ride. Account for Every Delivery.',
         theme_color: '#0F4C81',
         background_color: '#FFFFFF',
