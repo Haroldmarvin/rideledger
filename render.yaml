@@ -1,0 +1,24 @@
+# Render Blueprint for the RideLedger API (frontend deploys separately on Vercel).
+services:
+  - type: web
+    name: rideledger-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false        # set to your MongoDB Atlas connection string
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      - key: CLIENT_URL
+        sync: false        # e.g. https://rideledger.vercel.app
+      - key: UPLOAD_STORAGE
+        value: local
+      - key: BUSINESS_TZ
+        value: Africa/Monrovia
