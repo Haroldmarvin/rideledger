@@ -8,6 +8,7 @@ const { parseCentsInput, isValidCents, formatCents } = require('../utils/money')
 const { businessDate, isValidDateString } = require('../utils/dates');
 const { asyncHandler, isObjectId, paginate, qs, trimOrEmpty } = require('../utils/helpers');
 const ApiError = require('../utils/ApiError');
+const deletion = require('../services/deletionService');
 
 const POPULATE = [
   { path: 'rider', select: 'riderId name phone' },
@@ -185,4 +186,11 @@ const returnCloseout = asyncHandler(async (req, res) => {
   res.json({ closeout });
 });
 
-module.exports = { previewCloseout, listCloseouts, getCloseout, submitCloseout, confirmCloseout, returnCloseout };
+/** Management only: remove a handover record. The rider's records for that day become editable again. */
+const deleteCloseout = asyncHandler(async (req, res) => {
+  const closeout = await findScoped(req, req.params.id);
+  await deletion.deleteCloseout(req, closeout, trimOrEmpty((req.body && req.body.reason) || req.query.reason, 500));
+  res.json({ message: `Handover ${closeout.closeoutId} deleted. The day is unlocked.` });
+});
+
+module.exports = { previewCloseout, listCloseouts, getCloseout, submitCloseout, confirmCloseout, returnCloseout, deleteCloseout };

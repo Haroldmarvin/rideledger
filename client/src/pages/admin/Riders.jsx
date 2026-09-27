@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Users, Pencil, KeyRound, Power } from 'lucide-react';
+import { Plus, Search, Users, Pencil, KeyRound, Power, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { useApi } from '../../hooks/useApi';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -13,6 +13,7 @@ import LoadingButton from '../../components/LoadingButton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
 import ConfirmModal from '../../components/ConfirmModal';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import Money from '../../components/Money';
 import { StatusBadge } from '../../components/Badges';
 import { TableSkeleton } from '../../components/Skeleton';
@@ -116,6 +117,22 @@ export default function Riders() {
   const [modal, setModal] = useState(null); // {rider?}
   const [resetFor, setResetFor] = useState(null);
   const [toggle, setToggle] = useState(null);
+  const [del, setDel] = useState(null); // { rider, footprint? }
+
+  // First try a plain delete; if the rider has records the server answers 409 with counts → ask again with typed confirmation
+  const doDelete = async (reason) => {
+    const { rider, footprint } = del;
+    try {
+      await api.delete(`/riders/${rider._id}${footprint ? '?cascade=true' : ''}`, { data: { reason } });
+    } catch (e) {
+      if (e.status === 409 && e.raw?.details?.requiresCascade && !footprint) { setDel({ rider, footprint: e.raw.details.footprint }); return; }
+      throw e;
+    }
+    invalidateLookups();
+    toast.success(`${rider.name} deleted.`);
+    setDel(null);
+    reload();
+  };
 
   const doToggle = async () => {
     const next = toggle.status === 'active' ? 'inactive' : 'active';
@@ -154,7 +171,8 @@ export default function Riders() {
                     <td className="text-end text-nowrap">
                       <button type="button" className="btn btn-sm btn-light" title="Edit" onClick={() => setModal({ rider: r })}><Pencil size={15} /></button>{' '}
                       <button type="button" className="btn btn-sm btn-light" title="Reset password" onClick={() => setResetFor(r)}><KeyRound size={15} /></button>{' '}
-                      <button type="button" className={`btn btn-sm ${r.status === 'active' ? 'btn-outline-danger' : 'btn-outline-success'}`} title={r.status === 'active' ? 'Deactivate' : 'Activate'} onClick={() => setToggle(r)}><Power size={15} /></button>
+                      <button type="button" className={`btn btn-sm ${r.status === 'active' ? 'btn-outline-warning' : 'btn-outline-success'}`} title={r.status === 'active' ? 'Deactivate' : 'Activate'} onClick={() => setToggle(r)}><Power size={15} /></button>{' '}
+                      <button type="button" className="btn btn-sm btn-outline-danger" title="Delete rider" onClick={() => setDel({ rider: r })}><Trash2 size={15} /></button>
                     </td>
                   </tr>
                 ))}
@@ -169,6 +187,17 @@ export default function Riders() {
       <ConfirmModal show={Boolean(toggle)} title={toggle?.status === 'active' ? 'Deactivate rider?' : 'Activate rider?'} tone={toggle?.status === 'active' ? 'danger' : 'success'}
         message={toggle?.status === 'active' ? `${toggle?.name} will be signed out and cannot log in. Their bike is unassigned. All historical records are kept.` : `${toggle?.name} will be able to log in again.`}
         confirmLabel={toggle?.status === 'active' ? 'Deactivate' : 'Activate'} onConfirm={doToggle} onClose={() => setToggle(null)} />
+      <DeleteConfirmModal
+        key={del?.footprint ? 'cascade' : 'simple'}
+        show={Boolean(del)}
+        title={del?.footprint ? `Delete ${del?.rider.name} and ALL their records?` : `Delete ${del?.rider.name}?`}
+        message={del?.footprint
+          ? `${del.rider.name} has ${del.footprint.deliveries} deliveries, ${del.footprint.expenses} expenses and ${del.footprint.closeouts} handovers. All of them will be deleted along with the rider's login. Reports will no longer include them.`
+          : `${del?.rider.name}'s account and login will be removed. If they have any records you will be asked again.`}
+        confirmText={del?.footprint ? del.rider.name : undefined}
+        confirmLabel={del?.footprint ? 'Delete rider and records' : 'Delete rider'}
+        onConfirm={doDelete}
+        onClose={() => setDel(null)} />
     </div>
   );
 }

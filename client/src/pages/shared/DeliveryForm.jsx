@@ -10,6 +10,7 @@ import { useLookups } from '../../hooks/useLookups';
 import { offlineQueue, newClientRef, drafts } from '../../services/offlineQueue';
 import FormField from '../../components/FormField';
 import MoneyInput from '../../components/MoneyInput';
+import DestinationPicker from '../../components/DestinationPicker';
 import LoadingButton from '../../components/LoadingButton';
 import ErrorAlert from '../../components/ErrorAlert';
 import Money from '../../components/Money';
@@ -48,7 +49,7 @@ function validate(f, { needRider }) {
   if (!phone) e.customerPhone = 'Please enter the customer phone number.';
   else if (!PHONE_RE.test(phone)) e.customerPhone = 'Phone number looks wrong. Use digits only, e.g. 0777123456.';
   if (!f.pickupLocation.trim()) e.pickupLocation = 'Please enter the pickup location.';
-  if (!f.destination.trim()) e.destination = 'Please enter the destination.';
+  if (!f.destination.trim()) e.destination = 'Please choose or type the destination.';
   if (!f.paymentMethod) e.paymentMethod = 'Please choose how the customer paid.';
   if (!f.status) e.status = 'Please choose the delivery status.';
   const fee = toCents(f.deliveryFee);
@@ -78,6 +79,7 @@ export default function DeliveryForm({ mode = 'create' }) {
   const [busy, setBusy] = useState(false);
   const [serverError, setServerError] = useState(null);
   const [saved, setSaved] = useState(null); // last saved delivery (for "continue working")
+  const [resetCount, setResetCount] = useState(0); // remounts per-delivery widgets (e.g. destination picker) after save
   const [draftRestored, setDraftRestored] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [now, setNow] = useState(new Date());
@@ -172,6 +174,7 @@ export default function DeliveryForm({ mode = 'create' }) {
     setErrors({});
     setTouched(false);
     setDraftRestored(false);
+    setResetCount((n) => n + 1);
     if (user) drafts.clear(user._id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => firstInput.current?.focus(), 250);
@@ -305,20 +308,20 @@ export default function DeliveryForm({ mode = 'create' }) {
           <FormField label="Customer phone" required error={errors.customerPhone} htmlFor="customerPhone">
             <input id="customerPhone" type="tel" inputMode="tel" className={`form-control form-control-lg ${inv('customerPhone')}`} value={form.customerPhone} onChange={(e) => set({ customerPhone: e.target.value })} placeholder="0777123456" maxLength={20} />
           </FormField>
-          <div className="row g-2">
-            <div className="col-12 col-sm-6">
-              <FormField label="Pickup" required error={errors.pickupLocation} htmlFor="pickup">
-                <input id="pickup" list="rl-pickups" className={`form-control form-control-lg ${inv('pickupLocation')}`} value={form.pickupLocation} onChange={(e) => set({ pickupLocation: e.target.value })} maxLength={200} />
-              </FormField>
-            </div>
-            <div className="col-12 col-sm-6">
-              <FormField label="Destination" required error={errors.destination} htmlFor="destination">
-                <input id="destination" list="rl-destinations" className={`form-control form-control-lg ${inv('destination')}`} value={form.destination} onChange={(e) => set({ destination: e.target.value })} maxLength={200} />
-              </FormField>
-            </div>
-          </div>
+          <FormField label="Pickup" required error={errors.pickupLocation} htmlFor="pickup">
+            <input id="pickup" list="rl-pickups" className={`form-control form-control-lg ${inv('pickupLocation')}`} value={form.pickupLocation} onChange={(e) => set({ pickupLocation: e.target.value })} maxLength={200} />
+          </FormField>
+          <FormField label="Destination" required error={errors.destination} htmlFor="destination">
+            <DestinationPicker
+              key={resetCount}
+              value={form.destination}
+              onChange={(v) => set({ destination: v })}
+              options={settings?.destinations || []}
+              recent={recent.destinations}
+              invalid={Boolean(errors.destination)}
+            />
+          </FormField>
           <datalist id="rl-pickups">{recent.pickups.map((p) => <option key={p} value={p} />)}</datalist>
-          <datalist id="rl-destinations">{recent.destinations.map((p) => <option key={p} value={p} />)}</datalist>
           <div className="row g-2">
             <div className="col-7">
               <FormField label="Order reference" hint="Optional" htmlFor="orderRef" className="mb-0">

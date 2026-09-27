@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { DEFAULT_DESTINATIONS } = require('../config/constants');
 
 /** Single-document application settings. */
 const settingSchema = new mongoose.Schema({
@@ -7,6 +8,7 @@ const settingSchema = new mongoose.Schema({
   currencySymbol: { type: String, trim: true, maxlength: 5, default: '$' },
   allowRiderFeeOverride: { type: Boolean, default: true },
   requireReceiptForExpenses: { type: Boolean, default: false },
+  destinations: { type: [String], default: () => [...DEFAULT_DESTINATIONS] }, // delivery destination picklist
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 

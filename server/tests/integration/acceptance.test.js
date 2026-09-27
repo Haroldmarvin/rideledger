@@ -389,3 +389,64 @@ describe('Customer pays more than the delivery fee (order money)', () => {
     expect(report.body.report.totals.extra).toBe(2000);
   });
 });
+
+describe('Management deletions', () => {
+  test('riders cannot delete; admin can delete a delivery and it is audited', async () => {
+    const created = await api().post('/api/deliveries').set(auth(ctx.rider2)).send({
+      customerName: 'Delete Me', customerPhone: '0777000999', pickupLocation: 'Kitchen', destination: 'ELWA', deliveryFee: 500, amountCollected: 500, paymentMethod: 'Cash', status: 'Delivered',
+    });
+    expect(created.status).toBe(201);
+    const id = created.body.delivery._id;
+    expect((await api().delete(`/api/deliveries/${id}`).set(auth(ctx.rider2))).status).toBe(403);
+    const del = await api().delete(`/api/deliveries/${id}`).set(auth(ctx.admin)).send({ reason: 'Entered by mistake' });
+    expect(del.status).toBe(200);
+    expect(await M.Delivery.exists({ _id: id })).toBeNull();
+    const log = await M.AuditLog.findOne({ action: 'Admin deleted delivery', entityId: id }).lean();
+    expect(log.previousData.customerName).toBe('Delete Me');
+    expect(log.newData.reason).toBe('Entered by mistake');
+  });
+
+  test('admin deletes an expense', async () => {
+    const e = await api().post('/api/expenses').set(auth(ctx.rider2)).field('category', 'Fuel').field('amount', '200');
+    expect(e.status).toBe(201);
+    expect((await api().delete(`/api/expenses/${e.body.expense._id}`).set(auth(ctx.admin))).status).toBe(200);
+    expect(await M.Expense.exists({ _id: e.body.expense._id })).toBeNull();
+  });
+
+  test('deleting a handover unlocks the day for the rider', async () => {
+    const sub = await api().post('/api/closeouts').set(auth(ctx.rider2)).send({ actualHandover: 2500 });
+    expect(sub.status).toBe(201);
+    const del = await api().delete(`/api/closeouts/${sub.body.closeout._id}`).set(auth(ctx.admin));
+    expect(del.status).toBe(200);
+    const again = await api().post('/api/deliveries').set(auth(ctx.rider2)).send({
+      customerName: 'After Unlock', customerPhone: '0777000888', pickupLocation: 'Kitchen', destination: 'Sinkor', deliveryFee: 500, amountCollected: 500, paymentMethod: 'Cash', status: 'Delivered',
+    });
+    expect(again.status).toBe(201);
+  });
+
+  test('bike delete unassigns the rider', async () => {
+    const b = await api().post('/api/bikes').set(auth(ctx.admin)).send({ bikeId: 'DEL-1' });
+    expect(b.status).toBe(201);
+    expect((await api().delete(`/api/bikes/${b.body.bike._id}`).set(auth(ctx.admin))).status).toBe(200);
+    expect(await M.Bike.exists({ _id: b.body.bike._id })).toBeNull();
+  });
+
+  test('rider with records needs cascade; cascade removes rider, login and all their records', async () => {
+    const rider = await M.Rider.findOne({ email: 'rider2@test.com' }).lean();
+    const blocked = await api().delete(`/api/riders/${rider._id}`).set(auth(ctx.admin));
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.details.requiresCascade).toBe(true);
+    expect(blocked.body.details.footprint.deliveries).toBeGreaterThan(0);
+    const del = await api().delete(`/api/riders/${rider._id}?cascade=true`).set(auth(ctx.admin));
+    expect(del.status).toBe(200);
+    expect(await M.Rider.exists({ _id: rider._id })).toBeNull();
+    expect(await M.Delivery.countDocuments({ rider: rider._id })).toBe(0);
+    expect(await M.User.exists({ email: 'rider2@test.com' })).toBeNull();
+    expect((await login('rider2@test.com', 'Rider12345')).status).toBe(401);
+  });
+
+  test('the audit log still cannot be deleted', async () => {
+    const res = await api().delete('/api/audit-logs').set(auth(ctx.admin));
+    expect(res.status).toBe(404);
+  });
+});

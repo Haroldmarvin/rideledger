@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { Lock, Flag } from 'lucide-react';
+import { Lock, Flag, Trash2 } from 'lucide-react';
 import Money from './Money';
 import { StatusBadge, PaymentBadge } from './Badges';
 import { formatDate } from '../utils/format';
 
-export default function DeliveryTable({ items, basePath, showRider = true }) {
+/** onDelete (optional, management): shows a delete button on each row. */
+export default function DeliveryTable({ items, basePath, showRider = true, onDelete }) {
   const navigate = useNavigate();
   return (
     <div className="table-responsive">
@@ -12,7 +13,7 @@ export default function DeliveryTable({ items, basePath, showRider = true }) {
         <thead>
           <tr>
             <th>Delivery ID</th><th>Date</th>{showRider && <th>Rider</th>}<th>Customer</th><th>Pickup</th><th>Destination</th>
-            <th className="text-end">Fee</th><th className="text-end">Collected</th><th className="text-end">Extra</th><th className="text-end">Outstanding</th><th>Payment</th><th>Status</th>
+            <th className="text-end">Fee</th><th className="text-end">Collected</th><th className="text-end">Extra</th><th className="text-end">Outstanding</th><th>Payment</th><th>Status</th>{onDelete && <th />}
           </tr>
         </thead>
         <tbody>
@@ -34,6 +35,12 @@ export default function DeliveryTable({ items, basePath, showRider = true }) {
               <td className="text-end">{d.outstandingAmount > 0 ? <Money cents={d.outstandingAmount} tone="warning-emphasis" /> : <span className="text-secondary">—</span>}</td>
               <td><PaymentBadge method={d.paymentMethod} /></td>
               <td><StatusBadge status={d.status} /></td>
+              {onDelete && (
+                <td className="text-end">
+                  <button type="button" className="btn btn-sm btn-outline-danger" title={`Delete ${d.deliveryId}`}
+                    onClick={(e) => { e.stopPropagation(); onDelete(d); }} onKeyDown={(e) => e.stopPropagation()}><Trash2 size={15} /></button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

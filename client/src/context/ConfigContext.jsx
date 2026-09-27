@@ -6,7 +6,7 @@ import { todayLocal } from '../utils/format';
 
 const ConfigContext = createContext(null);
 
-const DEFAULTS = { settings: { companyName: 'Afri Kapital Kitchen', currencySymbol: '$', allowRiderFeeOverride: true, requireReceiptForExpenses: false }, currentFee: null, today: todayLocal() };
+const DEFAULTS = { settings: { companyName: 'Afri Kapital Kitchen', currencySymbol: '$', allowRiderFeeOverride: true, requireReceiptForExpenses: false, destinations: [] }, currentFee: null, today: todayLocal() };
 
 export function ConfigProvider({ children }) {
   const { user } = useAuth();

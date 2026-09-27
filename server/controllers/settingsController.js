@@ -7,12 +7,32 @@ const constants = require('../config/constants');
 const { env } = require('../config/env');
 const { businessDate } = require('../utils/dates');
 
+/** Stored destination list, or the defaults for installs created before the list existed. */
+function destinationsOf(settings) {
+  return Array.isArray(settings.destinations) && settings.destinations.length ? settings.destinations : [...constants.DEFAULT_DESTINATIONS];
+}
+
+/** Clean an admin-submitted destination list: trim, drop blanks, remove duplicates (case-insensitive), keep order. */
+function cleanDestinations(list) {
+  if (!Array.isArray(list)) throw ApiError.badRequest('Destinations must be a list.');
+  const seen = new Set();
+  const out = [];
+  for (const raw of list) {
+    const v = trimOrEmpty(raw, 80);
+    if (!v || seen.has(v.toLowerCase())) continue;
+    seen.add(v.toLowerCase());
+    out.push(v);
+  }
+  if (out.length > constants.MAX_DESTINATIONS) throw ApiError.badRequest(`You can save up to ${constants.MAX_DESTINATIONS} destinations.`);
+  return out;
+}
+
 /** Public-to-authenticated app configuration (both roles). */
 const getAppConfig = asyncHandler(async (req, res) => {
   const settings = await Setting.get();
   const fee = await getCurrentFee();
   res.json({
-    settings: { companyName: settings.companyName, currencySymbol: settings.currencySymbol, allowRiderFeeOverride: settings.allowRiderFeeOverride, requireReceiptForExpenses: settings.requireReceiptForExpenses },
+    settings: { companyName: settings.companyName, currencySymbol: settings.currencySymbol, allowRiderFeeOverride: settings.allowRiderFeeOverride, requireReceiptForExpenses: settings.requireReceiptForExpenses, destinations: destinationsOf(settings) },
     currentFee: fee ? fee.fee : null,
     today: businessDate(),
     businessTz: env.businessTz,
@@ -42,12 +62,13 @@ const updateSettings = asyncHandler(async (req, res) => {
   }
   if (req.body.allowRiderFeeOverride !== undefined) update.allowRiderFeeOverride = req.body.allowRiderFeeOverride === true;
   if (req.body.requireReceiptForExpenses !== undefined) update.requireReceiptForExpenses = req.body.requireReceiptForExpenses === true;
+  if (req.body.destinations !== undefined) update.destinations = cleanDestinations(req.body.destinations);
   update.updatedBy = req.user._id;
 
   const after = await Setting.findOneAndUpdate({ _id: 'app' }, { $set: update }, { new: true, upsert: true }).lean();
-  const d = diff(before, after, ['companyName', 'currencySymbol', 'allowRiderFeeOverride', 'requireReceiptForExpenses']);
+  const d = diff({ ...before, destinations: destinationsOf(before).join(', ') }, { ...after, destinations: destinationsOf(after).join(', ') }, ['companyName', 'currencySymbol', 'allowRiderFeeOverride', 'requireReceiptForExpenses', 'destinations']);
   if (d.changed) await audit(req, { action: 'Admin updated settings', entityType: 'Setting', entityRef: 'app', previousData: d.prev, newData: d.next });
-  res.json({ settings: after });
+  res.json({ settings: { ...after, destinations: destinationsOf(after) } });
 });
 
 module.exports = { getAppConfig, updateSettings };

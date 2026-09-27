@@ -10,6 +10,7 @@ const { EXPENSE_STATUSES, EXPENSE_CATEGORIES, EXPENSE_EDITABLE_FIELDS } = requir
 const { asyncHandler, isObjectId, paginate, qs, trimOrEmpty } = require('../utils/helpers');
 const { isValidDateString, businessDate } = require('../utils/dates');
 const ApiError = require('../utils/ApiError');
+const deletion = require('../services/deletionService');
 
 const POPULATE = [
   { path: 'rider', select: 'riderId name phone' },
@@ -258,7 +259,15 @@ const requestCorrection = asyncHandler(async (req, res) => {
   res.status(201).json({ correction: cr });
 });
 
+/** Management only: permanently remove an expense and its receipt (audited). */
+const deleteExpense = asyncHandler(async (req, res) => {
+  const expense = await findScoped(req, req.params.id);
+  await deletion.deleteExpense(req, expense, trimOrEmpty((req.body && req.body.reason) || req.query.reason, 500));
+  res.json({ message: `Expense ${expense.expenseId} deleted.` });
+});
+
 module.exports = {
+  deleteExpense,
   listExpenses, getExpense, createExpense, updateExpense,
   approveExpense: reviewExpense('Approved'), rejectExpense: reviewExpense('Rejected'),
   getReceipt, requestCorrection,

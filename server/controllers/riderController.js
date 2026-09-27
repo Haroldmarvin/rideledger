@@ -10,6 +10,7 @@ const { parseFilters } = require('../utils/filters');
 const { asyncHandler, isObjectId, qs, trimOrEmpty, escapeRegex } = require('../utils/helpers');
 const { businessDate } = require('../utils/dates');
 const ApiError = require('../utils/ApiError');
+const deletion = require('../services/deletionService');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -217,18 +218,22 @@ const riderActivity = asyncHandler(async (req, res) => {
 });
 
 /** Permanent delete is only allowed for riders with no history. Otherwise deactivate. */
+/**
+ * DELETE /riders/:id            → deletes a rider with no records; 409 with counts if they have records
+ * DELETE /riders/:id?cascade=true → deletes the rider AND all their deliveries, expenses and handovers
+ */
 const deleteRider = asyncHandler(async (req, res) => {
   const rider = await findRider(req.params.id);
-  const [d, e, c] = await Promise.all([
-    Delivery.exists({ rider: rider._id }), Expense.exists({ rider: rider._id }), DailyCloseout.exists({ rider: rider._id }),
-  ]);
-  if (d || e || c) throw ApiError.conflict('This rider has historical records and cannot be deleted. Deactivate the rider instead.');
-  await unassignRider(rider._id);
-  await User.deleteOne({ rider: rider._id });
-  await Rider.deleteOne({ _id: rider._id });
-  await Bike.updateMany({ assignedRider: rider._id }, { $set: { assignedRider: null } });
-  await audit(req, { action: 'Admin deleted rider (no history)', entityType: 'Rider', entityId: rider._id, entityRef: rider.riderId, previousData: { name: rider.name, email: rider.email } });
-  res.json({ message: 'Rider deleted.' });
+  const cascade = String(req.query.cascade || (req.body && req.body.cascade) || '') === 'true';
+  const result = await deletion.deleteRider(req, rider, { cascade, reason: trimOrEmpty((req.body && req.body.reason) || req.query.reason, 500) });
+  if (result.blocked) {
+    const f = result.footprint;
+    throw ApiError.conflict(
+      `${rider.name} has ${f.deliveries} deliveries, ${f.expenses} expenses and ${f.closeouts} handovers. Deleting the rider will delete all of these too.`,
+      { footprint: f, requiresCascade: true },
+    );
+  }
+  res.json({ message: `${rider.name} deleted.`, deleted: result.footprint });
 });
 
 module.exports = { listRiders, getRider, createRider, updateRider, resetPassword, setRiderBike, riderPerformance, riderActivity, deleteRider };

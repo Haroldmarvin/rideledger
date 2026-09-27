@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Pencil, Lock, FilePenLine, Flag, History, MapPin, Phone, Hash, Bike, User } from 'lucide-react';
+import { ArrowLeft, Pencil, Lock, FilePenLine, Flag, History, MapPin, Phone, Hash, Bike, User, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -11,6 +11,7 @@ import FormField from '../../components/FormField';
 import MoneyInput from '../../components/MoneyInput';
 import LoadingButton from '../../components/LoadingButton';
 import ErrorAlert from '../../components/ErrorAlert';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { StatusBadge, PaymentBadge, CloseoutBadge } from '../../components/Badges';
 import { CardSkeleton } from '../../components/Skeleton';
 import { formatDate, formatDateTime } from '../../utils/format';
@@ -53,6 +54,7 @@ export default function DeliveryDetail() {
   const [corr, setCorr] = useState(null);
   const [corrErrors, setCorrErrors] = useState({});
   const [busy, setBusy] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
 
   if (loading && !data) return <div className="container-narrow"><CardSkeleton rows={8} /></div>;
   if (error) return <div className="container-narrow"><ErrorAlert error={error} onRetry={reload} /><Link to={base} className="btn btn-light">Back to deliveries</Link></div>;
@@ -149,7 +151,16 @@ export default function DeliveryDetail() {
           <button type="button" className="btn btn-outline-primary d-flex align-items-center gap-1" onClick={openCorrection}><FilePenLine size={16} /> Request correction</button>
         )}
         {pendingCorrection && <span className="badge rl-badge rl-badge-warning align-self-center">Correction {pendingCorrection.requestId} pending review</span>}
+        {isAdmin && (
+          <button type="button" className="btn btn-outline-danger d-flex align-items-center gap-1 ms-auto" onClick={() => setShowDelete(true)}><Trash2 size={16} /> Delete</button>
+        )}
       </div>
+
+      <DeleteConfirmModal show={showDelete} title={`Delete delivery ${d.deliveryId}?`}
+        message={<>{d.customerName} · {d.destination} · fee <Money cents={d.deliveryFee} />, collected <Money cents={d.amountCollected} />.{lock.locked ? ' This day has a handover, so its totals will be recalculated.' : ''}</>}
+        confirmLabel="Delete delivery"
+        onConfirm={async (reason) => { await api.delete(`/deliveries/${d._id}`, { data: { reason } }); toast.success(`${d.deliveryId} deleted.`); setShowDelete(false); navigate(base, { replace: true }); }}
+        onClose={() => setShowDelete(false)} />
 
       {corrections.length > 0 && (
         <div className="card mb-3">

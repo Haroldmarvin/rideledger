@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Undo2, Scale, FilePenLine, Check, X } from 'lucide-react';
+import { CheckCircle2, Undo2, Scale, FilePenLine, Check, X, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { useApi } from '../../hooks/useApi';
 import { useLookups } from '../../hooks/useLookups';
@@ -12,6 +12,7 @@ import EmptyState from '../../components/EmptyState';
 import Pagination from '../../components/Pagination';
 import Modal from '../../components/Modal';
 import ConfirmModal from '../../components/ConfirmModal';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import FormField from '../../components/FormField';
 import MoneyInput from '../../components/MoneyInput';
 import LoadingButton from '../../components/LoadingButton';
@@ -80,6 +81,7 @@ function Closeouts() {
   const { data, loading, error, reload } = useApi('/closeouts', { status: f.status || undefined, rider: f.rider || undefined, from: f.from || undefined, to: f.to || undefined, page, limit: 30 });
   const [confirm, setConfirm] = useState(null);
   const [ret, setRet] = useState(null);
+  const [delCo, setDelCo] = useState(null);
   const set = (p) => { setF({ ...f, ...p }); setPage(1); };
 
   return (
@@ -113,8 +115,9 @@ function Closeouts() {
                     <td className="text-end text-nowrap">
                       {c.status === 'Submitted' && <>
                         <button type="button" className="btn btn-sm btn-success me-1 d-inline-flex align-items-center gap-1" onClick={() => setConfirm(c)}><CheckCircle2 size={15} /> Confirm</button>
-                        <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setRet(c)} title="Return to rider"><Undo2 size={15} /></button>
+                        <button type="button" className="btn btn-sm btn-outline-secondary me-1" onClick={() => setRet(c)} title="Return to rider"><Undo2 size={15} /></button>
                       </>}
+                      <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDelCo(c)} title="Delete handover"><Trash2 size={15} /></button>
                     </td>
                   </tr>
                 ))}
@@ -125,6 +128,11 @@ function Closeouts() {
       </div>
       {data && <Pagination page={data.page} pages={data.pages} total={data.total} onChange={setPage} />}
       <ConfirmCloseoutModal closeout={confirm} onClose={() => setConfirm(null)} onDone={(c) => { setConfirm(null); toast.success(`Handover confirmed. ${c.rider?.name}'s day is closed.`); reload(); }} />
+      <DeleteConfirmModal show={Boolean(delCo)} title={`Delete handover ${delCo?.closeoutId}?`}
+        message={delCo && <>{delCo.rider?.name} · {formatDate(delCo.date)} · expected <Money cents={delCo.expectedHandover} />. The handover record is removed and that day is <strong>unlocked</strong> so the rider can edit and submit again. Deliveries and expenses are kept.</>}
+        confirmLabel="Delete handover"
+        onConfirm={async (reason) => { await api.delete(`/closeouts/${delCo._id}`, { data: { reason } }); toast.success('Handover deleted. The day is unlocked.'); setDelCo(null); reload(); }}
+        onClose={() => setDelCo(null)} />
       <ConfirmModal show={Boolean(ret)} title="Return closeout to rider?" message="The day will be unlocked so the rider can fix their records and submit again." reasonLabel="Tell the rider what to fix" reasonRequired confirmLabel="Return to rider"
         onConfirm={async (notes) => { await api.post(`/closeouts/${ret._id}/return`, { notes }); toast.success('Closeout returned to rider.'); setRet(null); reload(); }} onClose={() => setRet(null)} />
     </>

@@ -11,6 +11,7 @@ const { businessDate, businessTime } = require('../utils/dates');
 const { DELIVERY_EDITABLE_FIELDS } = require('../config/constants');
 const { asyncHandler, isObjectId, paginate, qs, trimOrEmpty } = require('../utils/helpers');
 const ApiError = require('../utils/ApiError');
+const deletion = require('../services/deletionService');
 
 const POPULATE = [
   { path: 'rider', select: 'riderId name phone status' },
@@ -241,4 +242,11 @@ const requestCorrection = asyncHandler(async (req, res) => {
   res.status(201).json({ correction: cr });
 });
 
-module.exports = { listDeliveries, getDelivery, createDelivery, updateDelivery, requestCorrection };
+/** Management only: permanently remove a delivery (audited; the day's handover is recalculated). */
+const deleteDelivery = asyncHandler(async (req, res) => {
+  const delivery = await findScoped(req, req.params.id);
+  await deletion.deleteDelivery(req, delivery, trimOrEmpty((req.body && req.body.reason) || req.query.reason, 500));
+  res.json({ message: `Delivery ${delivery.deliveryId} deleted.` });
+});
+
+module.exports = { listDeliveries, getDelivery, createDelivery, updateDelivery, requestCorrection, deleteDelivery };

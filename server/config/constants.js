@@ -24,8 +24,15 @@ const EXPENSE_EDITABLE_FIELDS = Object.freeze(['date', 'category', 'amount', 'de
 
 const MAX_MONEY_CENTS = 100000000; // 1,000,000.00
 
+// Default delivery destinations (management can edit the list under Settings)
+const DEFAULT_DESTINATIONS = Object.freeze([
+  'Sinkor', 'Larpazee', 'Congo Town', 'Old Road', 'Free Port', 'Broadsheet', 'ELWA', 'Rehab',
+  'Redlight', 'Barnersville', 'Brewerville', 'Gardnersville', 'Caldwell', 'Paynesville', '72nd', 'Clara Town',
+]);
+const MAX_DESTINATIONS = 200;
+
 module.exports = {
   ROLES, PAYMENT_METHODS, DELIVERY_STATUSES, EXPENSE_CATEGORIES, EXPENSE_STATUSES, BIKE_STATUSES,
   ACCOUNT_STATUSES, CLOSEOUT_STATUSES, LOCKING_CLOSEOUT_STATUSES, CORRECTION_STATUSES,
-  DELIVERY_EDITABLE_FIELDS, EXPENSE_EDITABLE_FIELDS, MAX_MONEY_CENTS,
+  DELIVERY_EDITABLE_FIELDS, EXPENSE_EDITABLE_FIELDS, MAX_MONEY_CENTS, DEFAULT_DESTINATIONS, MAX_DESTINATIONS,
 };

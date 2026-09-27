@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X, Paperclip, Receipt, Plus, Pencil } from 'lucide-react';
+import { Check, X, Paperclip, Receipt, Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { useApi } from '../../hooks/useApi';
 import { useLookups } from '../../hooks/useLookups';
@@ -10,6 +10,7 @@ import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import ReceiptViewer from '../../components/ReceiptViewer';
 import ExpenseFormModal from '../../components/ExpenseFormModal';
 import Money from '../../components/Money';
@@ -29,6 +30,13 @@ export default function AdminExpenses() {
   const [receipt, setReceipt] = useState(null);
   const [action, setAction] = useState(null); // {type, expense}
   const [form, setForm] = useState(null);
+  const [del, setDel] = useState(null);
+  const doDelete = async (reason) => {
+    await api.delete(`/expenses/${del._id}`, { data: { reason } });
+    toast.success(`${del.expenseId} deleted.`);
+    setDel(null);
+    reload();
+  };
 
   const set = (patch) => { setF({ ...f, ...patch }); setPage(1); };
   const setPreset = (preset) => {
@@ -88,7 +96,8 @@ export default function AdminExpenses() {
                     <td className="text-end text-nowrap">
                       {e.status !== 'Approved' && <button type="button" className="btn btn-sm btn-success me-1" onClick={() => setAction({ type: 'approve', expense: e })} title="Approve"><Check size={15} /></button>}
                       {e.status !== 'Rejected' && <button type="button" className="btn btn-sm btn-outline-danger me-1" onClick={() => setAction({ type: 'reject', expense: e })} title="Reject"><X size={15} /></button>}
-                      <button type="button" className="btn btn-sm btn-light" onClick={() => setForm({ expense: e })} title="Edit"><Pencil size={15} /></button>
+                      <button type="button" className="btn btn-sm btn-light me-1" onClick={() => setForm({ expense: e })} title="Edit"><Pencil size={15} /></button>
+                      <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDel(e)} title="Delete expense"><Trash2 size={15} /></button>
                     </td>
                   </tr>
                 ))}
@@ -104,6 +113,9 @@ export default function AdminExpenses() {
         message={action && <><strong>{action.expense.rider?.name}</strong> · {action.expense.category} · <Money cents={action.expense.amount} />{action.expense.description ? <div className="small text-secondary mt-1">{action.expense.description}</div> : null}{action.type === 'approve' && <div className="small mt-2">This will reduce the rider&apos;s expected cash handover for {formatDate(action.expense.date)}.</div>}</>}
         reasonLabel={action?.type === 'reject' ? 'Reason for rejection' : (action?.expense.status === 'Rejected' ? 'Note (optional)' : undefined)} reasonRequired={action?.type === 'reject'}
         confirmLabel={action?.type === 'approve' ? 'Approve' : 'Reject'} onConfirm={review} onClose={() => setAction(null)} />
+      <DeleteConfirmModal show={Boolean(del)} title={`Delete expense ${del?.expenseId}?`}
+        message={del && <><strong>{del.rider?.name}</strong> · {del.category} · <Money cents={del.amount} /> · {formatDate(del.date)}{del.status === 'Approved' ? <div className="mt-1">It was approved, so that day&apos;s expected handover will be recalculated.</div> : null}</>}
+        confirmLabel="Delete expense" onConfirm={doDelete} onClose={() => setDel(null)} />
       <ExpenseFormModal show={Boolean(form)} expense={form?.expense} riders={riders} onClose={() => setForm(null)} onSaved={() => { setForm(null); toast.success('Expense saved.'); reload(); }} />
     </div>
   );

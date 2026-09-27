@@ -4,6 +4,7 @@ const { audit, diff } = require('../services/audit');
 const { BIKE_STATUSES } = require('../config/constants');
 const { asyncHandler, isObjectId, qs, trimOrEmpty, escapeRegex } = require('../utils/helpers');
 const ApiError = require('../utils/ApiError');
+const deletion = require('../services/deletionService');
 
 const POP = { path: 'assignedRider', select: 'riderId name phone status' };
 
@@ -96,4 +97,11 @@ const updateBike = asyncHandler(async (req, res) => {
   res.json({ bike });
 });
 
-module.exports = { listBikes, createBike, updateBike };
+/** Management only: remove a bike (its rider is unassigned; past deliveries keep their record). */
+const deleteBike = asyncHandler(async (req, res) => {
+  const bike = await findBike(req.params.id);
+  await deletion.deleteBike(req, bike, trimOrEmpty((req.body && req.body.reason) || req.query.reason, 500));
+  res.json({ message: `Bike ${bike.bikeId} deleted.` });
+});
+
+module.exports = { listBikes, createBike, updateBike, deleteBike };

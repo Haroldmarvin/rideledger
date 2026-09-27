@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Bike as BikeIcon, Pencil } from 'lucide-react';
+import { Plus, Bike as BikeIcon, Pencil, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { useApi } from '../../hooks/useApi';
 import { invalidateLookups } from '../../hooks/useLookups';
@@ -11,6 +11,7 @@ import FormField from '../../components/FormField';
 import LoadingButton from '../../components/LoadingButton';
 import ErrorAlert from '../../components/ErrorAlert';
 import EmptyState from '../../components/EmptyState';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import { StatusBadge } from '../../components/Badges';
 import { TableSkeleton } from '../../components/Skeleton';
 import { BIKE_STATUSES } from '../../utils/constants';
@@ -68,6 +69,15 @@ export default function Bikes() {
   const { data, loading, error, reload } = useApi('/bikes', { status: status || undefined });
   const riders = useApi('/riders');
   const [modal, setModal] = useState(null);
+  const [del, setDel] = useState(null);
+  const doDelete = async (reason) => {
+    await api.delete(`/bikes/${del._id}`, { data: { reason } });
+    invalidateLookups();
+    toast.success(`${del.bikeId} deleted.`);
+    setDel(null);
+    reload();
+    riders.reload();
+  };
   return (
     <div>
       <PageHeader title="Bikes" subtitle="Fleet list and rider assignment" actions={<button type="button" className="btn btn-primary d-flex align-items-center gap-1" onClick={() => setModal({})}><Plus size={16} /> Add bike</button>} />
@@ -90,7 +100,7 @@ export default function Bikes() {
                     <td className="text-end">{b.deliveries}</td>
                     <td className="small">{b.lastUsed ? formatDate(b.lastUsed) : '—'}</td>
                     <td className="small text-secondary text-truncate" style={{ maxWidth: 220 }}>{b.notes}</td>
-                    <td className="text-end"><button type="button" className="btn btn-sm btn-light" onClick={() => setModal({ bike: b })} title="Edit"><Pencil size={15} /></button></td>
+                    <td className="text-end text-nowrap"><button type="button" className="btn btn-sm btn-light" onClick={() => setModal({ bike: b })} title="Edit"><Pencil size={15} /></button>{' '}<button type="button" className="btn btn-sm btn-outline-danger" onClick={() => setDel(b)} title="Delete bike"><Trash2 size={15} /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -100,6 +110,9 @@ export default function Bikes() {
       </div>
       <BikeModal show={Boolean(modal)} bike={modal?.bike} riders={riders.data?.items || []} onClose={() => setModal(null)}
         onSaved={(b, edit) => { setModal(null); toast.success(edit ? `${b.bikeId} updated.` : `${b.bikeId} added.`); reload(); riders.reload(); }} />
+      <DeleteConfirmModal show={Boolean(del)} title={`Delete bike ${del?.bikeId}?`}
+        message={`${del?.bikeId} will be removed${del?.assignedRider ? ` and ${del.assignedRider.name} will have no bike` : ''}. Past deliveries stay in the records.`}
+        confirmLabel="Delete bike" onConfirm={doDelete} onClose={() => setDel(null)} />
     </div>
   );
 }

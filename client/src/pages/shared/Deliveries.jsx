@@ -14,6 +14,9 @@ import ErrorAlert from '../../components/ErrorAlert';
 import Pagination from '../../components/Pagination';
 import PageHeader from '../../components/PageHeader';
 import Money from '../../components/Money';
+import DeleteConfirmModal from '../../components/DeleteConfirmModal';
+import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import { CardSkeleton, TableSkeleton } from '../../components/Skeleton';
 import { presetRange, relativeDay } from '../../utils/format';
 
@@ -27,6 +30,8 @@ export default function Deliveries() {
   const { riders, bikes } = useLookups({ riders: isAdmin, bikes: isAdmin });
   const params = { ...toParams(filters), page, limit: isAdmin ? 50 : 30 };
   const { data, loading, error, reload } = useApi('/deliveries', params);
+  const toast = useToast();
+  const [del, setDel] = useState(null);
   const base = isAdmin ? '/admin/deliveries' : '/rider/deliveries';
   const s = data?.summary;
 
@@ -90,7 +95,7 @@ export default function Deliveries() {
 
       {data && data.items.length > 0 && (isAdmin ? (
         <>
-          <div className="card d-none d-md-block"><div className={loading ? 'opacity-50' : ''}><DeliveryTable items={data.items} basePath={base} /></div></div>
+          <div className="card d-none d-md-block"><div className={loading ? 'opacity-50' : ''}><DeliveryTable items={data.items} basePath={base} onDelete={isAdmin ? setDel : undefined} /></div></div>
           <div className="d-md-none">{data.items.map((d) => <DeliveryCard key={d._id} d={d} to={`${base}/${d._id}`} showRider />)}</div>
         </>
       ) : (
@@ -104,6 +109,11 @@ export default function Deliveries() {
         </div>
       ))}
       {data && <Pagination page={data.page} pages={data.pages} total={data.total} onChange={setPage} />}
+      <DeleteConfirmModal show={Boolean(del)} title={`Delete delivery ${del?.deliveryId}?`}
+        message={del && <>{del.rider?.name} · {del.customerName} · {del.destination} · fee <Money cents={del.deliveryFee} />, collected <Money cents={del.amountCollected} />.{del.closedPeriod ? ' This day has a handover, so its totals will be recalculated.' : ''}</>}
+        confirmLabel="Delete delivery"
+        onConfirm={async (reason) => { await api.delete(`/deliveries/${del._id}`, { data: { reason } }); toast.success(`${del.deliveryId} deleted.`); setDel(null); reload(); }}
+        onClose={() => setDel(null)} />
     </div>
   );
 }

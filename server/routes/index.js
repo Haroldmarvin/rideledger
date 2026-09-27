@@ -44,6 +44,7 @@ router.post('/deliveries', anyRole, deliveries.createDelivery);
 router.get('/deliveries/:id', anyRole, deliveries.getDelivery);
 router.patch('/deliveries/:id', anyRole, deliveries.updateDelivery);
 router.post('/deliveries/:id/correction-request', anyRole, deliveries.requestCorrection);
+router.delete('/deliveries/:id', admin, deliveries.deleteDelivery);
 
 // ---- Expenses ----
 router.get('/expenses', anyRole, expenses.listExpenses);
@@ -52,6 +53,7 @@ router.get('/expenses/:id', anyRole, expenses.getExpense);
 router.patch('/expenses/:id', anyRole, receiptUpload, expenses.updateExpense);
 router.get('/expenses/:id/receipt', anyRole, expenses.getReceipt);
 router.patch('/expenses/:id/approve', admin, expenses.approveExpense);
+router.delete('/expenses/:id', admin, expenses.deleteExpense);
 router.patch('/expenses/:id/reject', admin, expenses.rejectExpense);
 router.post('/expenses/:id/correction-request', anyRole, expenses.requestCorrection);
 
@@ -62,6 +64,7 @@ router.post('/closeouts', anyRole, closeouts.submitCloseout);
 router.get('/closeouts/:id', anyRole, closeouts.getCloseout);
 router.post('/closeouts/:id/confirm', admin, closeouts.confirmCloseout);
 router.post('/closeouts/:id/return', admin, closeouts.returnCloseout);
+router.delete('/closeouts/:id', admin, closeouts.deleteCloseout);
 
 // ---- Correction requests ----
 router.get('/corrections', anyRole, corrections.listCorrections);
@@ -83,6 +86,7 @@ router.get('/riders/:id/activity', admin, riders.riderActivity);
 router.get('/bikes', anyRole, bikes.listBikes);
 router.post('/bikes', admin, bikes.createBike);
 router.patch('/bikes/:id', admin, bikes.updateBike);
+router.delete('/bikes/:id', admin, bikes.deleteBike);
 
 // ---- Reports ----
 router.get('/reports/types', admin, reports.listTypes);
